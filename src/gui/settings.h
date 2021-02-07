@@ -28,6 +28,9 @@ namespace st {
     //! Generated colors.
     static QList<QColor> gcols;
 
+    //! Count of colors the current gcols is for.
+    static int gcols_for;
+
   };
 
 }

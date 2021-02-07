@@ -136,25 +136,19 @@ void Chip::setLocBlock(const QPair<int,int> &loc, int block_id)
   }
 }
 
-int Chip::calcCost(bool update_internal)
+int Chip::calcCost()
 {
-  // TODO current calculation ignores the inter-row gap. Shouldn't affect the 
-  // algorithm implementation but need to add that back in later for accurate 
-  // reporting.
   if (block_locs.isEmpty()) {
     qWarning() << "Should not call calcCost before block locations have been "
       "initialized.";
     return -1;
   }
   int calc_cost = 0;
+  // add the partial cost of each net
   for (int net_id=0; net_id<n_nets; net_id++) {
     calc_cost += costOfNet(net_id);
   }
-  if (update_internal) {
-    // update stored cost if instructed to do so
-    cost = calc_cost;
-  }
-  return cost;
+  return calc_cost;
 }
 
 int Chip::calcSwapCostDelta(int x1, int y1, int x2, int y2)
@@ -178,12 +172,16 @@ int Chip::calcSwapCostDelta(int x1, int y1, int x2, int y2)
 
   auto associatedNetCosts = [this, bid_1, bid_2]() {
     int cost = 0;
+    QSet<int> accounted_nets;
     for (int bid : {bid_1, bid_2}) {
       if (bid == -1) {
         continue;
       }
       for (int net_id : graph->blockNets(bid)) {
-        cost += costOfNet(net_id);
+        if (!accounted_nets.contains(net_id)) {
+          accounted_nets.insert(net_id);
+          cost += costOfNet(net_id);
+        }
       }
     }
     return cost;
@@ -192,30 +190,19 @@ int Chip::calcSwapCostDelta(int x1, int y1, int x2, int y2)
   // compute the cost of associated nets before the change
   int cost_i = associatedNetCosts();
 
+  // TODO very inelegant, think about how to make this more streamlined
+
   // perform the swap
-  QPair<int,int> bcoord_swap = block_locs[bid_2];
-  block_locs[bid_2] = qMakePair(block_locs[bid_1].first, block_locs[bid_1].second);
-  block_locs[bid_1] = bcoord_swap;
+  setLocBlock(qMakePair(x1, y1), bid_2);
+  setLocBlock(qMakePair(x2, y2), bid_1);
 
   int cost_f = associatedNetCosts();
 
   // swap back
-  bcoord_swap = block_locs[bid_2];
-  block_locs[bid_2] = qMakePair(block_locs[bid_1].first, block_locs[bid_1].second);
-  block_locs[bid_1] = bcoord_swap;
+  setLocBlock(qMakePair(x1, y1), bid_1);
+  setLocBlock(qMakePair(x2, y2), bid_2);
 
   return cost_f - cost_i;
-}
-
-void Chip::addCostDelta(int delta)
-{
-  if (cost < 0) {
-    qWarning() << "Attempted to add delta to invalid cost (<0).";
-  }
-  cost += delta;
-  if (cost < 0) {
-    qWarning() << "Cost becomes invalid after adding a delta (<0).";
-  }
 }
 
 void Chip::setGrid(const QVector<QVector<int>> &t_grid, bool skip_validation)

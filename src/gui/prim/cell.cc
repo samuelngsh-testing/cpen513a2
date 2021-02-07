@@ -12,7 +12,7 @@ using namespace gui;
 Cell::Cell(int x, int y, int block_id)
   : x(x), y(y), block_id(block_id)
 {
-  setPos(x*st::Settings::sf, y*st::Settings::sf);
+  setPos(x*st::Settings::sf, 2*y*st::Settings::sf);
 }
 
 QRectF Cell::boundingRect() const

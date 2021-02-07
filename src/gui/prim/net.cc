@@ -42,8 +42,10 @@ void Net::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
   painter->setPen(net_col);
   QPointF base_coord = QPointF(coords[0]) * st::Settings::sf;
+  base_coord.setY(base_coord.y()*2);  // scale for routing tracks
   for (int i=1; i<coords.size(); i++) {
     QPointF t_coord = QPointF(coords[i])*st::Settings::sf;
+    t_coord.setY(t_coord.y()*2);  // scale for routing tracks
     painter->drawLine(QLineF(base_coord, t_coord));
   }
 }

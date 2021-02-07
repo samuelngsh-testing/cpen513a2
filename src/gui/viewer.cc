@@ -70,7 +70,7 @@ void Viewer::fitProblemInView()
   // TODO implement
   if (chip != nullptr && chip->isInitialized()) {
     qreal sf = st::Settings::sf;  // scaling factor
-    QRectF rect(0, 0, chip->dimX()*sf, chip->dimY()*sf);
+    QRectF rect(0, 0, chip->dimX()*sf, chip->dimY()*sf*2);
     setSceneRect(rect);
     fitInView(rect, Qt::KeepAspectRatio);
   }

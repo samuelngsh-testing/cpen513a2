@@ -91,20 +91,19 @@ namespace sp {
     //! Return the cell coordinates of the specified block as a pair.
     QPair<int,int> blockLoc(int block_id) {return block_locs[block_id];}
 
-    //! Re-compute the cost of the current placement from scratch.
-    //! Optional bool to update the internal cost value as well.
-    int calcCost(bool update_internal=false);
+    //! Compute the cost of the current placement from scratch. Does not update 
+    //! the internal cost counter, use setCost to do that.
+    int calcCost();
+
+    //! Set the cost to the specified value.
+    int setCost(int t_cost) {cost = t_cost;}
+
+    //! Return the current stored cost of the problem without recalculating it.
+    int getCost() const {return cost;}
 
     //! Compute the cost delta for executing a swap between two coordinates.
     //! Does not update the internal cost.
-    //! TODO delete this later, let the placement algorithm deal with this.
     int calcSwapCostDelta(int x1, int y1, int x2, int y2);
-
-    //! Update the cost by the provided delta (without checking whether it's right).
-    void addCostDelta(int delta);
-
-    //! Return the current cost of the placement, -1 if no placement.
-    int getCost() const {return cost;}
 
     //! Set the grid to the provided 2D matrix.
     void setGrid(const QVector<QVector<int>> &t_grid, bool skip_validation=false);

@@ -14,12 +14,13 @@ using namespace st;
 qreal Settings::sf = 25;
 
 QList<QColor> Settings::gcols;
+int Settings::gcols_for=0;
 
 QColor Settings::colorGenerator(int ind, int max_ind)
 {
   // generate color list if it's empty or if the max index has changed beyond
   // what's currently supported by the existing list
-  if (gcols.isEmpty() || max_ind > gcols.size()) {
+  if (gcols_for == 0 || gcols_for != max_ind || max_ind > gcols.size()) {
     gcols.clear();
 
     // define a color tier threshold where the generation algorithm changes a bit
