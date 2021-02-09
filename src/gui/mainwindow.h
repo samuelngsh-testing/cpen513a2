@@ -45,10 +45,14 @@ namespace gui {
     //! Initialize the top menu bar.
     void initMenuBar();
 
+    //! Load problem from file dialog.
+    void loadProblemFromFileDialog();
+
     // Private variables
     sp::Chip *chip=nullptr; //!< Pointer to the chip.
     Viewer *viewer=nullptr; //!< Pointer to the GUI viewer.
     TelemetryChart *tchart=nullptr; //!< Pointer to the telemetry chart.
+    QDockWidget *dw_tchart=nullptr; //!< Dockwidget for telemetry chart.
 
   };
 

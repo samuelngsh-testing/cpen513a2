@@ -46,6 +46,8 @@ namespace gui {
     QValueAxis *axis_x;       //!< x axis pointer.
     QValueAxis *axis_y_cost;  //!< y axis pointer for cost.
     QValueAxis *axis_y_T;     //!< y axis pointer for temperature.
+    QLabel *l_curr_T;         //!< Label of current temperature.
+    QLabel *l_curr_cost;      //!< Label of current cost.
     float y_max_buf=1.1;      //!< Percentage buffer to add at the top of y axes.
     int max_cost=-1;          //!< Maximum cost seen.
     float max_T=-1;           //!< Maximum temperature seen.

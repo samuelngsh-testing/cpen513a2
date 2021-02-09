@@ -31,31 +31,6 @@ namespace pc{
     bool crunch=true;             //!< For the very last step use T=0 TODO find corret name
   };
 
-  //! Convenience class storing information relevant to a Net.
-  // TODO remove
-  class Net
-  {
-  public:
-    //! Constructor.
-    Net() : x_min(-1), x_max(-1), y_min(-1), y_max(-1), cost(-1) {};
-
-    //! Set x and y bounds.
-    void setBounds(int t_x_min, int t_y_min, int t_x_max, int t_y_max);
-
-    //! Return the cost delta if a block is moved from a certain coordinate to 
-    //! another. The internal cost is not actually updated.
-    //! Also sets the provided ref params to the new x and y bounds.
-    int costDeltaOfMove(int x_from, int y_from, int x_to, int y_to,
-        int &new_x_min, int &new_y_min, int &new_x_max, int &new_y_max);
-    
-
-  private:
-    QVector<int> block_ids;   //!< Blocks associated with this net.
-    int x_min, x_max;         //!< Minimum and maximum x spanned by the net.
-    int y_min, y_max;         //!< Minimum and maximum y spanned by the net (ignores routing tracks).
-    int cost;                 //!< Cost associated with this net.
-  };
-
   //! The block placer class using simulated annealing to minimize placement
   //! costs.
   class Placer : public QObject
@@ -81,7 +56,7 @@ namespace pc{
 
   private:
 
-    //! Place blocks onto grid in sequence.
+    //! Place blocks onto random grid locations.
     void initBlockPos();
 
     //! Decide on initial temperature with Sangiovanni-Vincentelli approach.
@@ -103,6 +78,7 @@ namespace pc{
     std::random_device rd;  //!< Random device.
     std::mt19937 mt;        //!< Use the Mersenne Twister PRNG.
     std::uniform_int_distribution<int> ind_dist;      //! Random distribution for indices.
+    std::uniform_int_distribution<int> bid_dist;      //! Random distribution for block IDs.
     std::uniform_real_distribution<float> prob_dist;  //! Random distribution for probabilities.
   };
 

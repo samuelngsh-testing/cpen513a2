@@ -13,17 +13,6 @@
 
 using namespace pc;
 
-//! Set x and y bounds.
-// TODO remove
-void Net::setBounds(int t_x_min, int t_y_min, int t_x_max, int t_y_max)
-{
-  x_min = t_x_min;
-  y_min = t_y_min;
-  x_max = t_x_max;
-  y_max = t_y_max;
-  cost = (x_max - x_min) + 2*(y_max - y_min);
-}
-
 Placer::Placer(sp::Chip *t_chip)
   : chip(t_chip), mt(rd())
 {
@@ -42,6 +31,7 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
 
   // set RNG distribution
   ind_dist = std::uniform_int_distribution<int>(0, chip->dimX()*chip->dimY()-1);
+  bid_dist = std::uniform_int_distribution<int>(0, chip->numBlocks()-1);
   // TODO verify that RNG implementation is sound (doesn't always produce the 
   // same random vars)
 
@@ -59,7 +49,6 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
   int bid_a, bid_b;                 // block IDs a and b for the swap
   int update_x=0;
 
-  qDebug() << tr("cycle_attempts=%1").arg(cycle_attempts);
   emit sig_updateGui(chip);
 
   // start the loop with an initial temperature
@@ -76,16 +65,6 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
       int cost_delta = chip->calcSwapCostDelta(coord_a.first, coord_a.second,
           coord_b.first, coord_b.second);
 
-      /* TODO remove
-      int cost_i = chip->calcCost();
-      swapLocs(coord_a, coord_b);
-      int cost_f = chip->calcCost();
-      if (cost_delta != cost_f - cost_i) {
-        qDebug() << "different costs" << cost_delta << cost_f - cost_i;
-      }
-      swapLocs(coord_a, coord_b);
-      */
-
       // evaluate swap acceptance
       if (acceptCostDelta(cost_delta, T)) {
         // perform swap and update cost
@@ -96,7 +75,7 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
 
       // emit signal for GUI update
       // TODO remove hard-coded step_until_exit cond
-      if (sa_settings.gui_up == GuiEachSwap || step_until_exit==1) {
+      if (sa_settings.gui_up == GuiEachSwap) {
         emit sig_updateGui(chip);
         qDebug() << tr("Curr stored cost=%1,  Next T=%3, till_exit=%4").arg(cost).arg(T).arg(step_until_exit);
       }
@@ -138,9 +117,19 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
 void Placer::initBlockPos()
 {
   int nx = chip->dimX();
-  for (int i=0; i<chip->numBlocks(); i++) {
-    QPair<int,int> coord = ind_coord(i, nx);
-    chip->setLocBlock(coord, i);
+  int ny = chip->dimY();
+  // list of unoccupied grid indices
+  QList<int> grid_inds;
+  for (int gid=0; gid<nx*ny; gid++) {
+    grid_inds.append(gid);
+  }
+  // place block by block
+  for (int bid=0; bid<chip->numBlocks(); bid++) {
+    std::uniform_int_distribution<int> dis(0, grid_inds.size()-1);
+    int rand_ind = dis(mt);
+    QPair<int,int> loc = ind_coord(grid_inds[rand_ind], nx);
+    chip->setLocBlock(loc, bid);
+    grid_inds.removeAt(rand_ind);
   }
 }
 
@@ -159,7 +148,6 @@ float Placer::initTempSV(int rand_moves, float T_fact)
     int cost_f = chip->calcCost();
     costs[i] = cost_f - cost_i;
   }
-  qDebug() << costs;
   float sum = std::accumulate(costs.begin(), costs.end(), 0.0);
   float mean = sum / costs.size();
   float sq_sum = std::inner_product(costs.begin(), costs.end(), costs.begin(), 0.0);
@@ -170,18 +158,15 @@ float Placer::initTempSV(int rand_moves, float T_fact)
 void Placer::pickLocsToSwap(QPair<int,int> &coord_a, QPair<int,int> &coord_b,
     int &bid_a, int &bid_b)
 {
-  // pick random locs to swap
-  int ind_a = -1;
-  int ind_b = -1;
-  while (ind_a == ind_b || (bid_a == -1 && bid_b == -1)) {
-    // repeat until different indices are chosen and both aren't empty
-    ind_a = ind_dist(mt);
-    ind_b = ind_dist(mt);
-    coord_a = ind_coord(ind_a, chip->dimX());
-    coord_b = ind_coord(ind_b, chip->dimX());
-    bid_a = chip->blockIdAt(coord_a);
-    bid_b = chip->blockIdAt(coord_b);
+  bool chosen = false;
+  while (!chosen) {
+    // choose random block ID as a and any location as b, eligible if not equal
+    bid_a = bid_dist(mt);
+    coord_a = chip->blockLoc(bid_a);
+    coord_b = ind_coord(ind_dist(mt), chip->dimX());
+    chosen = (coord_a != coord_b);
   }
+  bid_b = chip->blockIdAt(coord_b);
 }
 
 void Placer::swapLocs(const QPair<int,int> &coord_a, const QPair<int,int> &coord_b)

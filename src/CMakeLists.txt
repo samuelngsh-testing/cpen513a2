@@ -75,6 +75,7 @@ set_target_properties(placer PROPERTIES
 #target_link_libraries(${PROJECT_NAME} PUBLIC pinrouter_lib)
 
 # build unit tests
+# TODO implement tests
 #add_executable(placer_tests tests/placer_tests.cpp ${LIB_SOURCES} ${LIB_HEADERS} ${CUSTOM_RSC})
 #target_link_libraries(placer_tests Qt5::Test ${LIB_LINKS})
 #add_test(placer_tests placer_tests)

@@ -96,7 +96,7 @@ namespace sp {
     int calcCost();
 
     //! Set the cost to the specified value.
-    int setCost(int t_cost) {cost = t_cost;}
+    void setCost(int t_cost) {cost = t_cost;}
 
     //! Return the current stored cost of the problem without recalculating it.
     int getCost() const {return cost;}

@@ -39,6 +39,12 @@ void MainWindow::readAndShowProblem(const QString &in_path)
 
   // read the problem onto the class chip pointer
   chip = new sp::Chip(in_path);
+  if (!chip->isInitialized()) {
+    qWarning() << "Chip was not successfully initialized.";
+    QMessageBox::warning(this, "Chip initialization failed", "A chip "
+        "construction was unsuccessful. Is the provided file valid?");
+    return;
+  }
 
   // show the problem
   viewer->showChip(chip);
@@ -48,7 +54,9 @@ void MainWindow::readAndShowProblem(const QString &in_path)
 void MainWindow::runPlacement()
 {
   if (chip == nullptr) {
-    qWarning() << "runPlacement invoked when no Chip is present. Ignoring.";
+    qWarning() << "runPlacement invoked when no Chip is present. Aborting.";
+    QMessageBox::warning(this, "No Problem Present", "An attempt to run "
+        "placement with no loaded problem has been halted.");
     return;
   }
   pc::Placer placer(chip);
@@ -60,6 +68,7 @@ void MainWindow::runPlacement()
   connect(&placer, &pc::Placer::sig_updateGui,
       [this](sp::Chip *chip)
       {
+        // update the chip upon instructions from the placer
         viewer->showChip(chip);
         qApp->processEvents();
       });
@@ -71,59 +80,63 @@ void MainWindow::runPlacement()
 
 void MainWindow::initGui()
 {
-  initMenuBar();
-
   // init GUI elements
   viewer = new Viewer(this);
   tchart = new TelemetryChart(this);
 
-  QHBoxLayout *hbl = new QHBoxLayout(); // main vertical layout
+  QHBoxLayout *hbl = new QHBoxLayout(); // main layout
   hbl->addWidget(viewer);
-  hbl->addWidget(tchart);
-  // TODO add a widget for showing current step properties (most importantly the cost)
 
   QWidget *w_main = new QWidget(this);  // main widget that holds everything
   w_main->setLayout(hbl);
   setCentralWidget(w_main);
+
+  // set dock widgets
+  dw_tchart = new QDockWidget("Placement Telemetry", this);
+  dw_tchart->setWidget(tchart);
+  addDockWidget(Qt::RightDockWidgetArea, dw_tchart);
+
+  // initiate menu bars
+  initMenuBar();
 }
 
 void MainWindow::initMenuBar()
 {
   // initialize menus
   QMenu *file = menuBar()->addMenu(tr("&File"));
+  QMenu *view = menuBar()->addMenu(tr("&View"));
 
   // file menu actions
   QAction *open_file = new QAction(tr("&Open..."), this);
-  QMenu *open_sample_problem = new QMenu(tr("Open Sample Problem"), this);
   QAction *run_placement = new QAction(tr("&Run Placement"), this);
   QAction *quit = new QAction(tr("&Quit"), this);
 
-  // TODO populate sample problems list
-
   // assign keyboard shortcuts
   open_file->setShortcut(tr("CTRL+O"));
+  run_placement->setShortcut(tr("CTRL+R"));
   quit->setShortcut(tr("CTRL+Q"));
 
   // connection action signals
-  connect(open_file, &QAction::triggered,
-      [this](){
-        // open file dialog and load the specified file path
-        QFileDialog fd;
-        fd.setDefaultSuffix("txt");
-        QString open_path = fd.getOpenFileName(this, tr("Open File"),
-            "", tr("Text Files (*.txt);;All files (*.*)"));
-        if (!open_path.isNull()) {
-          readAndShowProblem(open_path);
-        }
-      });
+  connect(open_file, &QAction::triggered, this, &MainWindow::loadProblemFromFileDialog);
   connect(run_placement, &QAction::triggered, this, &MainWindow::runPlacement);
   connect(quit, &QAction::triggered, this, &QWidget::close);
 
   // add actions to the appropriate menus
   file->addAction(open_file);
-  file->addMenu(open_sample_problem);
-  file->addSeparator();
   file->addAction(run_placement);
   file->addSeparator();
   file->addAction(quit);
+  view->addAction(dw_tchart->toggleViewAction());
+}
+
+void MainWindow::loadProblemFromFileDialog()
+{
+  // open file dialog and load the specified file path
+  QFileDialog fd;
+  fd.setDefaultSuffix("txt");
+  QString open_path = fd.getOpenFileName(this, tr("Open File"),
+      "", tr("Text Files (*.txt);;All files (*.*)"));
+  if (!open_path.isNull()) {
+    readAndShowProblem(open_path);
+  }
 }
