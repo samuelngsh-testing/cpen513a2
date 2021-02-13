@@ -23,6 +23,7 @@ Placer::Placer(sp::Chip *t_chip)
 void Placer::runPlacer(const SASettings &t_sa_settings)
 {
   // initialize the block positions and get the initial cost
+  chip->initEmptyPlacements();  // clear all previous costs and placements
   initBlockPos();
   if (chip->numBlocks() == 1) {
     // on the off-chance that there is only one block to be placed, just return
@@ -39,12 +40,12 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
 
   // flags and variables
   sa_settings = t_sa_settings;
+  sa_settings.min_rw_dim = std::min(sa_settings.min_rw_dim, 
+      std::min(chip->dimX(), chip->dimY()));
   bool exit_cond = false;   // exit conditions met
   int cycle_attempts = sa_settings.swap_fact * pow(chip->numBlocks(), (4./3));
   int step_until_exit = 2000; // TODO change this to some dynamic thing
   cycle_attempts = std::max(cycle_attempts, 1); // at least 1 attempt per cycle
-  //float T_init = 500; // TODO make configurable
-  float T_init = initTempSV(50, 20);
   QPair<int,int> coord_a, coord_b;  // coordinates to be swapped
   int bid_a, bid_b;                 // block IDs a and b for the swap
   int update_x=0;
@@ -54,23 +55,33 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
   // start the loop with an initial temperature
   int cost = chip->calcCost();
   chip->setCost(cost);
-  float T = T_init;
-  int attempts = cycle_attempts;
+  float T = initTempSV(50, 20);
+  int rw_dim = std::max(chip->dimX(), chip->dimY());  // initialize range window
   while (!exit_cond) {
+    // variables that renew at every point in the schedule
+    int attempts = cycle_attempts;
+    int n_swaps = 0;
+    long cost_accum = 0;
+    long cost_accum_sq = 0;
+    float p_accept_accum = 0;
     while (attempts > 0) {
       // pick random locs to swap
-      pickLocsToSwap(coord_a, coord_b, bid_a, bid_b);
+      pickLocsToSwap(coord_a, coord_b, bid_a, bid_b, rw_dim);
 
       // compute cost delta for the swap
       int cost_delta = chip->calcSwapCostDelta(coord_a.first, coord_a.second,
           coord_b.first, coord_b.second);
 
       // evaluate swap acceptance
-      if (acceptCostDelta(cost_delta, T)) {
+      if (acceptCostDelta(cost_delta, T, p_accept_accum)) {
         // perform swap and update cost
         swapLocs(coord_a, coord_b);
         cost += cost_delta;
         chip->setCost(cost);
+        // update std dev calculation stats
+        n_swaps++;
+        cost_accum += cost;
+        cost_accum_sq += pow(cost, 2);
       }
 
       // emit signal for GUI update
@@ -84,17 +95,33 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
     }
 
     // update annealing schedule
-    T *= sa_settings.decay_b;
-    attempts = cycle_attempts;
     step_until_exit--;
+    attempts = cycle_attempts;
+    updateRangeWindow(rw_dim, p_accept_accum/cycle_attempts);
     if (sa_settings.crunch && step_until_exit==1) {
+      // set T to 0 for last iteration
       T = 0;
+    } else {
+      // update T depending on selected schedule
+      switch (sa_settings.t_schd) {
+        case StdDevTUpdate:
+        {
+          double std_dev = sqrt(cost_accum_sq/n_swaps - pow(cost_accum/n_swaps ,2));
+          T = T * exp(-0.996 * T / std_dev);
+          break;
+        }
+        case ExpDecayTUpdate:
+        default:
+          T *= sa_settings.decay_b;
+          break;
+      }
     }
+
     //qDebug() << tr("Curr stored cost=%1, calculated cost=%2, Next T=%3, till_exit=%4").arg(cost).arg(chip->calcCost()).arg(T).arg(step_until_exit);
-    qDebug() << tr("Curr stored cost=%1, Next T=%3, till_exit=%4").arg(cost).arg(T).arg(step_until_exit);
+    qDebug() << tr("Curr stored cost=%1, Next T=%2, till_exit=%3, avg P accept=%4, range window dim=%5").arg(cost).arg(T).arg(step_until_exit).arg(p_accept_accum/cycle_attempts).arg(rw_dim);
     if (sa_settings.gui_up <= GuiEachAnnealUpdate) {
       emit sig_updateGui(chip);
-      emit sig_updateChart(cost, T);
+      emit sig_updateChart(cost, T, p_accept_accum/cycle_attempts, rw_dim);
     }
     update_x++;
 
@@ -135,38 +162,95 @@ void Placer::initBlockPos()
 
 float Placer::initTempSV(int rand_moves, float T_fact)
 {
-  QVector<int> costs(rand_moves);
+  // TODO remove: QVector<int> costs(rand_moves);
+  long cost_accum = 0;
+  long cost_accum_sq = 0;
   QPair<int,int> coord_a, coord_b;  // coordinates to be swapped
   int bid_a, bid_b;                 // block IDs a and b for the swap
   for (int i=0; i<rand_moves; i++) {
     // pick random locs to swap
-    pickLocsToSwap(coord_a, coord_b, bid_a, bid_b);
+    pickLocsToSwap(coord_a, coord_b, bid_a, bid_b, std::max(chip->dimX(), chip->dimY()));
     int cost_i = chip->calcCost();
     // perform the swap
     swapLocs(coord_a, coord_b);
     // calc difference
     int cost_f = chip->calcCost();
-    costs[i] = cost_f - cost_i;
+    // TODO remove costs[i] = cost_f - cost_i;
+
+    cost_accum += cost_f - cost_i;
+    cost_accum_sq += pow(cost_f - cost_i, 2);
   }
+  /* TODO remove
   float sum = std::accumulate(costs.begin(), costs.end(), 0.0);
   float mean = sum / costs.size();
   float sq_sum = std::inner_product(costs.begin(), costs.end(), costs.begin(), 0.0);
   float stdev = std::sqrt(sq_sum / costs.size() - mean * mean);
-  return stdev * T_fact;
+  */
+
+  float std_dev = sqrt(cost_accum_sq/rand_moves - pow(cost_accum/rand_moves, 2));
+  return std_dev * T_fact;
 }
 
 void Placer::pickLocsToSwap(QPair<int,int> &coord_a, QPair<int,int> &coord_b,
-    int &bid_a, int &bid_b)
+    int &bid_a, int &bid_b, int rw_dim)
 {
   bool chosen = false;
   while (!chosen) {
     // choose random block ID as a and any location as b, eligible if not equal
     bid_a = bid_dist(mt);
     coord_a = chip->blockLoc(bid_a);
-    coord_b = ind_coord(ind_dist(mt), chip->dimX());
+    // TODO remove coord_b = ind_coord(ind_dist(mt), chip->dimX());
+    pickCoordFromRangeWindow(coord_a, coord_b, rw_dim);
     chosen = (coord_a != coord_b);
   }
   bid_b = chip->blockIdAt(coord_b);
+}
+
+void Placer::pickCoordFromRangeWindow(const QPair<int,int> &coord_center,
+    QPair<int,int> &picked_coord, int rw_dim)
+{
+  // if not using range window, or if the window covers entire chip, pick anywhere
+  if (!sa_settings.use_rw || rw_dim == std::max(chip->dimX(), chip->dimY())) {
+    picked_coord = ind_coord(ind_dist(mt), chip->dimX());
+    return;
+  }
+
+  // otherwise, find the area of coverage
+  QRect rw_rect(coord_center.first - std::floor(rw_dim/2), coord_center.second - std::floor(rw_dim/2),
+      std::min(rw_dim, chip->dimX()), std::min(rw_dim, chip->dimY()));
+  if (rw_rect.top() < 0) {
+    rw_rect.moveTop(0);
+  }
+  if (rw_rect.left() < 0) {
+    rw_rect.moveLeft(0);
+  }
+  if (rw_rect.right() >= chip->dimX()) {
+    rw_rect.moveRight(chip->dimX()-1);
+  }
+  if (rw_rect.bottom() >= chip->dimY()) {
+    rw_rect.moveBottom(chip->dimY()-1);
+  }
+  if (sa_settings.sanity_check) {
+    // sanity check that the range window is fully contained in the chip
+    QRect chip_rect(0, 0, chip->dimX(), chip->dimY());
+    if (!chip_rect.contains(rw_rect)) {
+      qWarning() << "Range window rect " << rw_rect << " not completely "
+        "contained in chip rect " << chip_rect;
+    }
+  }
+
+  // pick a location in the range window, retry if overlapped with coord_center
+  std::uniform_int_distribution<int> rw_dist(0, rw_rect.width()*rw_rect.height()-1);
+  bool eligible = false;
+  int rw_ind = 0;
+  while (!eligible) {
+    rw_ind = rw_dist(mt);
+    picked_coord = ind_coord(rw_ind, rw_rect.width());
+    eligible = (picked_coord != coord_center);
+  }
+  // add the range window top left offset to the chosen coordinates
+  picked_coord.first += rw_rect.left();
+  picked_coord.second += rw_rect.top();
 }
 
 void Placer::swapLocs(const QPair<int,int> &coord_a, const QPair<int,int> &coord_b)
@@ -176,7 +260,7 @@ void Placer::swapLocs(const QPair<int,int> &coord_a, const QPair<int,int> &coord
   chip->setLocBlock(coord_b, bid_a);
 }
 
-bool Placer::acceptCostDelta(int delta, float T)
+bool Placer::acceptCostDelta(int delta, float T, float &p_accept_accum)
 {
   // always accept if lower cost
   if (delta <= 0) {
@@ -184,5 +268,29 @@ bool Placer::acceptCostDelta(int delta, float T)
   }
   // accept with some probability according to the annealing temperature
   float prob = std::exp(- (float)delta / T);
+  p_accept_accum += prob;
   return prob_dist(mt) < prob;
+}
+
+void Placer::updateRangeWindow(int &rw_dim, float p_accept)
+{
+  int max_dim = std::max(chip->dimX(), chip->dimY());
+  if (p_accept > sa_settings.p_upper) {
+    // acceptance rate too high, enlarge range window
+    if (rw_dim == max_dim) {
+      // range window already as big as the chip, can't expand further
+      return;
+    }
+    rw_dim = std::min(rw_dim + sa_settings.rw_dim_delta, max_dim);
+  } else if (p_accept < sa_settings.p_lower) {
+    // acceptance rate too low, shrink range window
+    if (rw_dim == sa_settings.min_rw_dim) {
+      // range window already at minimum, can't reduce further
+      return;
+    }
+    rw_dim = std::max(rw_dim - sa_settings.rw_dim_delta, sa_settings.min_rw_dim);
+  }
+  if (rw_dim % 2 != 1) {
+    rw_dim -= 1;
+  }
 }

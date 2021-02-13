@@ -87,6 +87,10 @@ Chip::Chip(const QString &f_path)
       " to anything";
   }
 
+  // initialize 2D grid and block list
+  initEmptyPlacements();
+
+  /* TODO remove
   // initialize 2D grid
   grid.clear();
   grid.resize(nx);
@@ -105,6 +109,7 @@ Chip::Chip(const QString &f_path)
 
   // initial cost set to be -1 (invalid) since nothing is placed
   cost = -1;
+  */
 
   initialized = true;
 }
@@ -112,6 +117,29 @@ Chip::Chip(const QString &f_path)
 Chip::~Chip()
 {
   delete graph;
+}
+
+void Chip::initEmptyPlacements()
+{
+  cost = -1;
+
+  // initialize 2D grid
+  grid.clear();
+  grid.resize(nx);
+  for (int x=0; x<nx; x++) {
+    grid[x].clear();
+    grid[x].resize(ny);
+    for (int y=0; y<ny; y++) {
+      grid[x][y] = -1;  // initialize to be empty
+    }
+  }
+
+  // initialize blocks list
+  block_locs.clear();
+  block_locs.resize(n_blocks);
+  for (auto &block_loc : block_locs) {
+    block_loc = qMakePair(-1, -1);
+  }
 }
 
 QList<int> Chip::netBlockIds(int net_id) const

@@ -59,6 +59,7 @@ void MainWindow::runPlacement()
         "placement with no loaded problem has been halted.");
     return;
   }
+  tchart->clearTelemetries();
   pc::Placer placer(chip);
   pc::SASettings sa_settings; // TODO read from some GUI to change settings
 

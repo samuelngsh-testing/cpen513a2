@@ -58,6 +58,9 @@ namespace sp {
     //! Destructor.
     ~Chip();
 
+    //! Clear all placements.
+    void initEmptyPlacements();
+
     //! Return whether this chip has been successfully initialized.
     bool isInitialized() {return initialized;}
 
