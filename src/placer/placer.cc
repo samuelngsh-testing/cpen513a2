@@ -53,9 +53,9 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
   emit sig_updateGui(chip);
 
   // start the loop with an initial temperature
+  float T = initTempSV(50, 20); // this must come before the first calcCost
   int cost = chip->calcCost();
   chip->setCost(cost);
-  float T = initTempSV(50, 20);
   int rw_dim = std::max(chip->dimX(), chip->dimY());  // initialize range window
   while (!exit_cond) {
     // variables that renew at every point in the schedule
@@ -97,8 +97,10 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
     // update annealing schedule
     step_until_exit--;
     attempts = cycle_attempts;
-    updateRangeWindow(rw_dim, p_accept_accum/cycle_attempts);
-    if (sa_settings.crunch && step_until_exit==1) {
+    if (sa_settings.use_rw) {
+      updateRangeWindow(rw_dim, p_accept_accum/cycle_attempts);
+    }
+    if (step_until_exit==1) {
       // set T to 0 for last iteration
       T = 0;
     } else {
@@ -107,7 +109,7 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
         case StdDevTUpdate:
         {
           double std_dev = sqrt(cost_accum_sq/n_swaps - pow(cost_accum/n_swaps ,2));
-          T = T * exp(-0.996 * T / std_dev);
+          T = T * exp(-0.7 * T / std_dev);
           break;
         }
         case ExpDecayTUpdate:
@@ -117,7 +119,14 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
       }
     }
 
-    //qDebug() << tr("Curr stored cost=%1, calculated cost=%2, Next T=%3, till_exit=%4").arg(cost).arg(chip->calcCost()).arg(T).arg(step_until_exit);
+    // sanity check
+    if (sa_settings.sanity_check) {
+      int calc_cost = chip->calcCost();
+      if (cost != calc_cost) {
+        qWarning() << tr("Conflicting costs: recorded %1, calculated %2").arg(cost).arg(calc_cost);
+      }
+    }
+
     qDebug() << tr("Curr stored cost=%1, Next T=%2, till_exit=%3, avg P accept=%4, range window dim=%5").arg(cost).arg(T).arg(step_until_exit).arg(p_accept_accum/cycle_attempts).arg(rw_dim);
     if (sa_settings.gui_up <= GuiEachAnnealUpdate) {
       emit sig_updateGui(chip);
@@ -127,11 +136,9 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
 
     // evaluate exit conditions
     // TODO implement something more proper
-    if (step_until_exit == 0) {
+    if (step_until_exit == 0 || T == 0) {
       exit_cond = true;
     }
-
-    // TODO extra SA optimizations if needed
   }
 
   qDebug() << "End of Simulated Annealing";

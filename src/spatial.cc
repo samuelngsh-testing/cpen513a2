@@ -90,27 +90,6 @@ Chip::Chip(const QString &f_path)
   // initialize 2D grid and block list
   initEmptyPlacements();
 
-  /* TODO remove
-  // initialize 2D grid
-  grid.clear();
-  grid.resize(nx);
-  for (int x=0; x<nx; x++) {
-    grid[x].resize(ny);
-    for (int y=0; y<ny; y++) {
-      grid[x][y] = -1;  // initialize to be empty
-    }
-  }
-
-  // initialize blocks list
-  block_locs.resize(n_blocks);
-  for (auto &block_loc : block_locs) {
-    block_loc = qMakePair(-1, -1);
-  }
-
-  // initial cost set to be -1 (invalid) since nothing is placed
-  cost = -1;
-  */
-
   initialized = true;
 }
 
@@ -190,14 +169,12 @@ int Chip::calcSwapCostDelta(int x1, int y1, int x2, int y2)
   int bid_1 = grid[x1][y1];
   int bid_2 = grid[x2][y2];
 
-  // TODO this routine can be sped up by having each net store its original
-  // cost. This optimization can be implemented later.
-
   // if swapping between two empty blocks, no change
   if (bid_1 == -1 && bid_2 == -1) {
     return 0;
   }
 
+  // calculate the cost of Nets associated with the provided block IDs
   auto associatedNetCosts = [this, bid_1, bid_2]() {
     int cost = 0;
     QSet<int> accounted_nets;
@@ -215,15 +192,14 @@ int Chip::calcSwapCostDelta(int x1, int y1, int x2, int y2)
     return cost;
   };
 
-  // compute the cost of associated nets before the change
+  // compute the cost of nets associated with the blocks before the change
   int cost_i = associatedNetCosts();
-
-  // TODO very inelegant, think about how to make this more streamlined
 
   // perform the swap
   setLocBlock(qMakePair(x1, y1), bid_2);
   setLocBlock(qMakePair(x2, y2), bid_1);
 
+  // compute the cost of nets associated with the blocks after the change
   int cost_f = associatedNetCosts();
 
   // swap back

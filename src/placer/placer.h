@@ -21,12 +21,11 @@ namespace pc{
   //! Simulated annealer settings.
   struct SASettings
   {
-    GuiUpdate gui_up=GuiEachSwap; //!< GUI update frequency.
+    GuiUpdate gui_up=GuiEachAnnealUpdate; //!< GUI update frequency.
     TSchd t_schd=ExpDecayTUpdate; //!< Temperature schedule.
     float decay_b=0.995;          //!< Base factor for exponential decay T.
     // TODO vars for compliecated temperature update (week 4 slide 17)
     float swap_fact=10;           //!< swap_fact * n_blocks^(4/3) moves are made per cycle
-    bool crunch=true;             //!< For the very last step use T=0 TODO find corret name
 
     // range window params
     bool use_rw=true;     //!< Specify whether range window should be used.

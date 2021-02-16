@@ -76,6 +76,9 @@ namespace sp {
     //! Return the number of nets.
     int numNets() const {return n_nets;}
 
+    //! Return the graph object.
+    Graph *getGraph() {return graph;}
+
     //! Return block IDs associated with a net
     QList<int> netBlockIds(int net_id) const;
 
@@ -111,10 +114,10 @@ namespace sp {
     //! Set the grid to the provided 2D matrix.
     void setGrid(const QVector<QVector<int>> &t_grid, bool skip_validation=false);
     
-  private:
-
     //! Calculate and return the cost of the specified net ID.
     int costOfNet(int net_id) const;
+
+  private:
 
     // Private variables
     Graph *graph=nullptr;   //!< Graph object that holds the connectivities.

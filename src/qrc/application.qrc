@@ -1,4 +1,14 @@
 <RCC>
 <qresource>
+    <file>test_problems/mini.txt</file>
+    <file>test_problems/mini_props.json</file>
+    <file>test_problems/mini_2.txt</file>
+    <file>test_problems/mini_2_props.json</file>
+    <file>test_problems/alu2.txt</file>
+    <file>test_problems/alu2_props.json</file>
+    <file>test_problems/apex1.txt</file>
+    <file>test_problems/apex1_props.json</file>
+    <file>test_problems/paira.txt</file>
+    <file>test_problems/paira_props.json</file>
 </qresource>
 </RCC>

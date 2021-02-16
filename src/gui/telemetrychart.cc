@@ -143,4 +143,5 @@ void TelemetryChart::initGui()
 
   // size settings
   setMinimumSize(600, 600);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 }

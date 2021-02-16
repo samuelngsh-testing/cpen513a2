@@ -11,6 +11,7 @@
 #include <QtWidgets>
 #include "spatial.h"
 #include "viewer.h"
+#include "invoker.h"
 #include "telemetrychart.h"
 
 namespace gui {
@@ -35,7 +36,7 @@ namespace gui {
     void readAndShowProblem(const QString &in_path);
 
     //! Run placement on the current problem.
-    void runPlacement();
+    void runPlacement(pc::SASettings sa_set);
 
   private:
 
@@ -49,8 +50,10 @@ namespace gui {
     void loadProblemFromFileDialog();
 
     // Private variables
-    sp::Chip *chip=nullptr; //!< Pointer to the chip.
-    Viewer *viewer=nullptr; //!< Pointer to the GUI viewer.
+    sp::Chip *chip=nullptr;   //!< Pointer to the chip.
+    Viewer *viewer=nullptr;   //!< Pointer to the GUI viewer.
+    Invoker *invoker=nullptr; //!< Pointer to the Invoker widget.
+    QDockWidget *dw_invoker=nullptr;//!< Dockwidget for the invoker.
     TelemetryChart *tchart=nullptr; //!< Pointer to the telemetry chart.
     QDockWidget *dw_tchart=nullptr; //!< Dockwidget for telemetry chart.
 

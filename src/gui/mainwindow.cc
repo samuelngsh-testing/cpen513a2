@@ -51,7 +51,7 @@ void MainWindow::readAndShowProblem(const QString &in_path)
   tchart->clearTelemetries();
 }
 
-void MainWindow::runPlacement()
+void MainWindow::runPlacement(pc::SASettings sa_set)
 {
   if (chip == nullptr) {
     qWarning() << "runPlacement invoked when no Chip is present. Aborting.";
@@ -61,9 +61,6 @@ void MainWindow::runPlacement()
   }
   tchart->clearTelemetries();
   pc::Placer placer(chip);
-  pc::SASettings sa_settings; // TODO read from some GUI to change settings
-
-  sa_settings.gui_up = pc::GuiEachAnnealUpdate;
 
   // connect signals
   connect(&placer, &pc::Placer::sig_updateGui,
@@ -76,15 +73,20 @@ void MainWindow::runPlacement()
   connect(&placer, &pc::Placer::sig_updateChart, tchart, &TelemetryChart::addTelemetry);
 
   // run the placement
-  placer.runPlacer(sa_settings);
+  placer.runPlacer(sa_set);
 }
 
 void MainWindow::initGui()
 {
   // init GUI elements
   viewer = new Viewer(this);
+  invoker = new Invoker(this);
   tchart = new TelemetryChart(this);
 
+  // signals
+  connect(invoker, &Invoker::sig_runPlacement, this, &MainWindow::runPlacement);
+
+  // layouts
   QHBoxLayout *hbl = new QHBoxLayout(); // main layout
   hbl->addWidget(viewer);
 
@@ -93,6 +95,9 @@ void MainWindow::initGui()
   setCentralWidget(w_main);
 
   // set dock widgets
+  dw_invoker = new QDockWidget("Placement Invocation", this);
+  dw_invoker->setWidget(invoker);
+  addDockWidget(Qt::RightDockWidgetArea, dw_invoker);
   dw_tchart = new QDockWidget("Placement Telemetry", this);
   dw_tchart->setWidget(tchart);
   addDockWidget(Qt::RightDockWidgetArea, dw_tchart);
@@ -109,24 +114,21 @@ void MainWindow::initMenuBar()
 
   // file menu actions
   QAction *open_file = new QAction(tr("&Open..."), this);
-  QAction *run_placement = new QAction(tr("&Run Placement"), this);
   QAction *quit = new QAction(tr("&Quit"), this);
 
   // assign keyboard shortcuts
   open_file->setShortcut(tr("CTRL+O"));
-  run_placement->setShortcut(tr("CTRL+R"));
   quit->setShortcut(tr("CTRL+Q"));
 
   // connection action signals
   connect(open_file, &QAction::triggered, this, &MainWindow::loadProblemFromFileDialog);
-  connect(run_placement, &QAction::triggered, this, &MainWindow::runPlacement);
   connect(quit, &QAction::triggered, this, &QWidget::close);
 
   // add actions to the appropriate menus
   file->addAction(open_file);
-  file->addAction(run_placement);
   file->addSeparator();
   file->addAction(quit);
+  view->addAction(dw_invoker->toggleViewAction());
   view->addAction(dw_tchart->toggleViewAction());
 }
 

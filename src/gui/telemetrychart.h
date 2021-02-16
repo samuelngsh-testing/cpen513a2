@@ -16,6 +16,7 @@ namespace gui {
 
   using namespace QtCharts;
 
+  //! A widget that plots telemetry relevant to the problem.
   class TelemetryChart : public QWidget
   {
     Q_OBJECT

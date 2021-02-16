@@ -16,7 +16,7 @@ find_package(Qt5Charts ${QT_VERSION_REQ} REQUIRED)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-#enable_testing() TODO uncomment this when tests have been written
+enable_testing()
 
 # add resources
 qt5_add_resources(CUSTOM_RSC qrc/application.qrc)
@@ -29,6 +29,7 @@ set(LIB_SOURCES
     gui/mainwindow.cc
     gui/telemetrychart.cc
     gui/viewer.cc
+    gui/invoker.cc
     gui/prim/cell.cc
     gui/prim/net.cc
     )
@@ -39,6 +40,7 @@ set(LIB_HEADERS
     gui/mainwindow.h
     gui/telemetrychart.h
     gui/viewer.h
+    gui/invoker.h
     gui/prim/cell.h
     gui/prim/net.h
     )
@@ -55,34 +57,25 @@ set(LIB_LINKS
 # inclusions
 include_directories(.)
 
-# build application library (shared by application and unit tests)
-# NOTE the library method only works on CMake 3.12 or above. Reverting to building
-#      the program and unit tests twice for compatibility reasons
-#add_library(pinrouter_lib OBJECT ${LIB_SOURCES} ${LIB_HEADERS} ${CUSTOM_RSC})
-#target_link_libraries(pinrouter_lib PUBLIC ${LIB_LINKS})
-
 # build application
 add_executable(placer MACOSX_BUNDLE main.cc ${LIB_SOURCES} ${LIB_HEADERS} ${CUSTOM_RSC})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_LINKS})
 set_target_properties(placer PROPERTIES
     BUNDLE True
-    MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.pinrouter
-    MACOSX_BUNDLE_BUNDLE_NAME pinrouter
+    MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.placer
+    MACOSX_BUNDLE_BUNDLE_NAME placer
     MACOSX_BUNDLE_BUNDLE_VERSION "0.0.1"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "0.0.1"
 )
-#add_executable(pinrouter main.cc)
-#target_link_libraries(${PROJECT_NAME} PUBLIC pinrouter_lib)
 
 # build unit tests
-# TODO implement tests
-#add_executable(placer_tests tests/placer_tests.cpp ${LIB_SOURCES} ${LIB_HEADERS} ${CUSTOM_RSC})
-#target_link_libraries(placer_tests Qt5::Test ${LIB_LINKS})
-#add_test(placer_tests placer_tests)
-#set_tests_properties(placer_tests PROPERTIES ENVIRONMENT QT_QPA_PLATFORM=offscreen)
-#add_custom_command(TARGET placer_tests
-#    POST_BUILD
-#    COMMAND ctest -C $<CONFIGURATION> --output-on-failure)
+add_executable(placer_tests tests/placer_tests.cpp ${LIB_SOURCES} ${LIB_HEADERS} ${CUSTOM_RSC})
+target_link_libraries(placer_tests Qt5::Test ${LIB_LINKS})
+add_test(placer_tests placer_tests)
+set_tests_properties(placer_tests PROPERTIES ENVIRONMENT QT_QPA_PLATFORM=offscreen)
+add_custom_command(TARGET placer_tests
+    POST_BUILD
+    COMMAND ctest -C $<CONFIGURATION> --output-on-failure)
 
 # install the binary
 install(TARGETS placer
