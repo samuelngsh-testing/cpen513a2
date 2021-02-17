@@ -1,5 +1,6 @@
 <RCC>
 <qresource>
+    <!-- test problem files -->
     <file>test_problems/mini.txt</file>
     <file>test_problems/mini_props.json</file>
     <file>test_problems/mini_2.txt</file>
@@ -10,5 +11,18 @@
     <file>test_problems/apex1_props.json</file>
     <file>test_problems/paira.txt</file>
     <file>test_problems/paira_props.json</file>
+    <!-- benchmark files -->
+    <file>benchmarks/alu2.txt</file>
+    <file>benchmarks/apex1.txt</file>
+    <file>benchmarks/apex4.txt</file>
+    <file>benchmarks/C880.txt</file>
+    <file>benchmarks/cm138a.txt</file>
+    <file>benchmarks/cm150a.txt</file>
+    <file>benchmarks/cm151a.txt</file>
+    <file>benchmarks/cm162a.txt</file>
+    <file>benchmarks/cps.txt</file>
+    <file>benchmarks/e64.txt</file>
+    <file>benchmarks/paira.txt</file>
+    <file>benchmarks/pairb.txt</file>
 </qresource>
 </RCC>

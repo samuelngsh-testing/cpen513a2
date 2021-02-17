@@ -40,6 +40,7 @@ namespace gui {
     QComboBox *cbb_t_schd;
     QDoubleSpinBox *sb_decay_b;
     QSpinBox *sb_swap_fact;
+    QSpinBox *sb_max_its;
     QGroupBox *gb_use_rw;
     QDoubleSpinBox *sb_p_upper;
     QDoubleSpinBox *sb_p_lower;
@@ -47,6 +48,7 @@ namespace gui {
     QSpinBox * sb_rw_dim_delta;
     QCheckBox *cb_sanity_check;
     QComboBox *cbb_gui_up;
+    QCheckBox *cb_show_stdout;
   };
 
 

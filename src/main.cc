@@ -10,6 +10,7 @@
 #include <QMainWindow>
 #include <QDebug>
 
+#include "benchmarker.h"
 #include "gui/mainwindow.h"
 
 int main(int argc, char **argv) {
@@ -24,7 +25,32 @@ int main(int argc, char **argv) {
   parser.addHelpOption();
   parser.addPositionalArgument("in_file", "Input file specifying the problem to"
       " be placed (optional, can be selected from the GUI).");
+  parser.addOption({"benchmark", "Benchmark mode. Run each sample problem "
+      "multiple times using default presets and return relevant statistics."});
+  parser.addOption({"bench_settings_in", "JSON input file for benchmark settings",
+      "path"});
+  parser.addOption({"json_out", "Write generated data into <path>. Simply"
+      " writes to out.json if unspecified.", "path"});
+  parser.addOption({"repeat", "Repeat each benchmark for the specified number "
+      "of times. Defaults to 10 if unspecified.", "repeat"});
+  // TODO take output JSON path for benchmarks
+  // TODO take repeat count for benchmarks
   parser.process(app);
+
+  // benchmark mode routine (don't show GUI if benchmarking)
+  bool benchmark_mode = parser.isSet("benchmark");
+  if (benchmark_mode) {
+    QString out_name = parser.isSet("json_out") ? parser.value("json_out") : "out.json";
+    QString set_name = parser.isSet("bench_settings_in") ? 
+      parser.value("bench_settings_in") : "";
+    int repeat = parser.isSet("repeat") ? parser.value("repeat").toInt() : 10;
+    // run the benchmarks and output to the specified JSON path
+    cli::Benchmarker bm(out_name, repeat, set_name);
+    bm.runBenchmarks();
+
+    // no need to show GUI after benchmarks are complete
+    return 0; 
+  }
 
   // get input file path
   const QStringList args = parser.positionalArguments();

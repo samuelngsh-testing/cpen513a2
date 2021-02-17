@@ -6,6 +6,7 @@
 // @desc:     Implementation of the placer.
 
 #include <algorithm>
+#include <math.h>
 #include "placer.h"
 
 #define coord_ind(x,y,nx) x+y*nx;
@@ -16,18 +17,27 @@ using namespace pc;
 Placer::Placer(sp::Chip *t_chip)
   : chip(t_chip), mt(rd())
 {
+  if (!t_chip->isInitialized()) {
+    qWarning() << "Uninitialized chip received in constructor, placement will "
+      "not be possible.";
+  }
   prob_dist = std::uniform_real_distribution<float>(0.0, 1.0);
-  // TODO implement
 }
 
-void Placer::runPlacer(const SASettings &t_sa_settings)
+SAResults Placer::runPlacer(const SASettings &t_sa_settings)
 {
+  // refuse to run if not initialized
+  if (!chip->isInitialized()) {
+    qWarning() << "Chip is uninitialized. Aborting placement.";
+    return SAResults();
+  }
+
   // initialize the block positions and get the initial cost
   chip->initEmptyPlacements();  // clear all previous costs and placements
   initBlockPos();
   if (chip->numBlocks() == 1) {
     // on the off-chance that there is only one block to be placed, just return
-    return;
+    return SAResults();
   }
 
   // set RNG distribution
@@ -44,7 +54,7 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
       std::min(chip->dimX(), chip->dimY()));
   bool exit_cond = false;   // exit conditions met
   int cycle_attempts = sa_settings.swap_fact * pow(chip->numBlocks(), (4./3));
-  int step_until_exit = 2000; // TODO change this to some dynamic thing
+  int iterations = 0;
   cycle_attempts = std::max(cycle_attempts, 1); // at least 1 attempt per cycle
   QPair<int,int> coord_a, coord_b;  // coordinates to be swapped
   int bid_a, bid_b;                 // block IDs a and b for the swap
@@ -64,7 +74,7 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
     long cost_accum = 0;
     long cost_accum_sq = 0;
     float p_accept_accum = 0;
-    while (attempts > 0) {
+    while (attempts--) {
       // pick random locs to swap
       pickLocsToSwap(coord_a, coord_b, bid_a, bid_b, rw_dim);
 
@@ -85,22 +95,22 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
       }
 
       // emit signal for GUI update
-      // TODO remove hard-coded step_until_exit cond
       if (sa_settings.gui_up == GuiEachSwap) {
         emit sig_updateGui(chip);
-        qDebug() << tr("Curr stored cost=%1,  Next T=%3, till_exit=%4").arg(cost).arg(T).arg(step_until_exit);
+        emit sig_updateChart(cost, T, -1, -1);
+        if (sa_settings.show_stdout) {
+          qDebug() << tr("Curr stored cost=%1,  Next T=%3, iteration=%4").arg(cost).arg(T).arg(iterations);
+        }
       }
-
-      attempts--;
     }
 
     // update annealing schedule
-    step_until_exit--;
+    iterations++;
     attempts = cycle_attempts;
     if (sa_settings.use_rw) {
       updateRangeWindow(rw_dim, p_accept_accum/cycle_attempts);
     }
-    if (step_until_exit==1) {
+    if (iterations == sa_settings.max_its - 1) {
       // set T to 0 for last iteration
       T = 0;
     } else {
@@ -108,12 +118,11 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
       switch (sa_settings.t_schd) {
         case StdDevTUpdate:
         {
-          double std_dev = sqrt(cost_accum_sq/n_swaps - pow(cost_accum/n_swaps ,2));
+          double std_dev = sqrt(cost_accum_sq/n_swaps - pow(cost_accum/n_swaps, 2));
           T = T * exp(-0.7 * T / std_dev);
           break;
         }
         case ExpDecayTUpdate:
-        default:
           T *= sa_settings.decay_b;
           break;
       }
@@ -127,7 +136,9 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
       }
     }
 
-    qDebug() << tr("Curr stored cost=%1, Next T=%2, till_exit=%3, avg P accept=%4, range window dim=%5").arg(cost).arg(T).arg(step_until_exit).arg(p_accept_accum/cycle_attempts).arg(rw_dim);
+    if (sa_settings.show_stdout) {
+      qDebug() << tr("Curr stored cost=%1, Next T=%2, iterations=%3, avg P accept=%4, range window dim=%5").arg(cost).arg(T).arg(iterations).arg(p_accept_accum/cycle_attempts).arg(rw_dim);
+    }
     if (sa_settings.gui_up <= GuiEachAnnealUpdate) {
       emit sig_updateGui(chip);
       emit sig_updateChart(cost, T, p_accept_accum/cycle_attempts, rw_dim);
@@ -136,16 +147,23 @@ void Placer::runPlacer(const SASettings &t_sa_settings)
 
     // evaluate exit conditions
     // TODO implement something more proper
-    if (step_until_exit == 0 || T == 0) {
+    if (iterations == sa_settings.max_its - 1 || isnan(T)) {
       exit_cond = true;
     }
   }
 
-  qDebug() << "End of Simulated Annealing";
+  if (sa_settings.show_stdout) {
+    qDebug() << "End of Simulated Annealing";
+  }
 
   if (sa_settings.gui_up <= GuiFinalOnly) {
     emit sig_updateGui(chip);
   }
+
+  SAResults results;
+  results.cost = cost;
+  results.iterations = iterations;
+  return results;
 }
 
 void Placer::initBlockPos()
@@ -169,7 +187,6 @@ void Placer::initBlockPos()
 
 float Placer::initTempSV(int rand_moves, float T_fact)
 {
-  // TODO remove: QVector<int> costs(rand_moves);
   long cost_accum = 0;
   long cost_accum_sq = 0;
   QPair<int,int> coord_a, coord_b;  // coordinates to be swapped
@@ -177,6 +194,7 @@ float Placer::initTempSV(int rand_moves, float T_fact)
   for (int i=0; i<rand_moves; i++) {
     // pick random locs to swap
     pickLocsToSwap(coord_a, coord_b, bid_a, bid_b, std::max(chip->dimX(), chip->dimY()));
+    // TODO switch to delta cost calc
     int cost_i = chip->calcCost();
     // perform the swap
     swapLocs(coord_a, coord_b);
@@ -187,13 +205,6 @@ float Placer::initTempSV(int rand_moves, float T_fact)
     cost_accum += cost_f - cost_i;
     cost_accum_sq += pow(cost_f - cost_i, 2);
   }
-  /* TODO remove
-  float sum = std::accumulate(costs.begin(), costs.end(), 0.0);
-  float mean = sum / costs.size();
-  float sq_sum = std::inner_product(costs.begin(), costs.end(), costs.begin(), 0.0);
-  float stdev = std::sqrt(sq_sum / costs.size() - mean * mean);
-  */
-
   float std_dev = sqrt(cost_accum_sq/rand_moves - pow(cost_accum/rand_moves, 2));
   return std_dev * T_fact;
 }
@@ -237,8 +248,8 @@ void Placer::pickCoordFromRangeWindow(const QPair<int,int> &coord_center,
   if (rw_rect.bottom() >= chip->dimY()) {
     rw_rect.moveBottom(chip->dimY()-1);
   }
+  // sanity check that the range window is fully contained in the chip
   if (sa_settings.sanity_check) {
-    // sanity check that the range window is fully contained in the chip
     QRect chip_rect(0, 0, chip->dimX(), chip->dimY());
     if (!chip_rect.contains(rw_rect)) {
       qWarning() << "Range window rect " << rw_rect << " not completely "
@@ -258,6 +269,15 @@ void Placer::pickCoordFromRangeWindow(const QPair<int,int> &coord_center,
   // add the range window top left offset to the chosen coordinates
   picked_coord.first += rw_rect.left();
   picked_coord.second += rw_rect.top();
+
+  // sanity check that the chosen coordinates fall within the chip
+  if (sa_settings.sanity_check) {
+    QRect chip_rect(0, 0, chip->dimX(), chip->dimY());
+    if (!chip_rect.contains(QPoint(picked_coord.first, picked_coord.second))) {
+      qWarning() << "Coordinates that fall outside the chip have been chosen.";
+    }
+  }
+
 }
 
 void Placer::swapLocs(const QPair<int,int> &coord_a, const QPair<int,int> &coord_b)
@@ -297,6 +317,7 @@ void Placer::updateRangeWindow(int &rw_dim, float p_accept)
     }
     rw_dim = std::max(rw_dim - sa_settings.rw_dim_delta, sa_settings.min_rw_dim);
   }
+  // prefer range windows with odd side-lengths
   if (rw_dim % 2 != 1) {
     rw_dim -= 1;
   }

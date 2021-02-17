@@ -17,15 +17,19 @@ namespace pc{
 
   enum TSchd {ExpDecayTUpdate, StdDevTUpdate};
   enum GuiUpdate {GuiEachSwap, GuiEachAnnealUpdate, GuiFinalOnly};
+  // TODO check whether GuiEachSwap and GuiFinalOnly actually work
 
   //! Simulated annealer settings.
   struct SASettings
   {
     GuiUpdate gui_up=GuiEachAnnealUpdate; //!< GUI update frequency.
-    TSchd t_schd=ExpDecayTUpdate; //!< Temperature schedule.
+    TSchd t_schd=StdDevTUpdate;   //!< Temperature schedule.
     float decay_b=0.995;          //!< Base factor for exponential decay T.
     // TODO vars for compliecated temperature update (week 4 slide 17)
     float swap_fact=10;           //!< swap_fact * n_blocks^(4/3) moves are made per cycle
+    int max_its=3000;             //!< maximum iterations
+
+    // TODO max iterations before force stop
 
     // range window params
     bool use_rw=true;     //!< Specify whether range window should be used.
@@ -35,7 +39,15 @@ namespace pc{
     int rw_dim_delta=10;  //!< Increase or reduce range window dimensions by this much.
 
     // other runtime params
-    bool sanity_check=true;   //!< Run additional sanity checks to help find bugs. TODO switch to false by default for submission
+    bool sanity_check=false;  //!< Run additional sanity checks to help find bugs. TODO switch to false by default for submission
+    bool show_stdout=false;   //!< Whether to show terminal output
+  };
+
+  //! Results to return.
+  struct SAResults
+  {
+    int cost=-1;          //!< Final cost of the layout.
+    int iterations=-1;    //!< Total iterations used.
   };
 
   //! The block placer class using simulated annealing to minimize placement
@@ -52,7 +64,7 @@ namespace pc{
     ~Placer() {};
 
     //! Run the placer.
-    void runPlacer(const SASettings &sa_settings);
+    SAResults runPlacer(const SASettings &sa_settings);
 
   signals:
     //! Signal for updating GUI with the current chip state.

@@ -71,10 +71,19 @@ Chip::Chip(const QString &f_path)
       reading_nets = true;
     } else {
       // read net definitions and add to Graph
+      int num_blocks = line_items[0].toInt();
       QList<int> conn_blocks;
+      for (int it_id=1; it_id < line_items.size(); it_id++) {
+        conn_blocks.append(line_items[it_id].toInt());
+      }
+      if (num_blocks != conn_blocks.size()) {
+        qFatal("Mismatching block counts.");
+      }
+      /* TODO remove
       for (const QString &b_id_str : line_items) {
         conn_blocks.append(b_id_str.toInt());
       }
+      */
       graph->setNet(net_id, conn_blocks);
     }
     net_id++;

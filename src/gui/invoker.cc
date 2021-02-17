@@ -23,12 +23,14 @@ void Invoker::invokePlacement()
   sa_set.t_schd = static_cast<pc::TSchd>(cbb_t_schd->currentIndex());
   sa_set.decay_b = sb_decay_b->value();
   sa_set.swap_fact = sb_swap_fact->value();
+  sa_set.max_its = sb_max_its->value();
   sa_set.use_rw = gb_use_rw->isChecked();
   sa_set.p_upper = sb_p_upper->value();
   sa_set.p_lower = sb_p_lower->value();
   sa_set.min_rw_dim = sb_min_rw_dim->value();
   sa_set.rw_dim_delta = sb_rw_dim_delta->value();
   sa_set.sanity_check = cb_sanity_check->isChecked();
+  sa_set.show_stdout = cb_show_stdout->isChecked();
 
   emit sig_runPlacement(sa_set);
 }
@@ -60,7 +62,14 @@ void Invoker::initGui()
   // swap multiplier
   sb_swap_fact = new QSpinBox();
   sb_swap_fact->setSingleStep(10);
+  sb_swap_fact->setRange(0, 1000);
   sb_swap_fact->setValue(sa_set.swap_fact);
+
+  // max iterations
+  sb_max_its = new QSpinBox();
+  sb_max_its->setSingleStep(100);
+  sb_max_its->setRange(1000, 1000000);
+  sb_max_its->setValue(sa_set.max_its);
 
   // range window settings
   gb_use_rw = new QGroupBox("Range Window");
@@ -106,6 +115,10 @@ void Invoker::initGui()
   cb_sanity_check = new QCheckBox("Run sanity checks");
   cb_sanity_check->setChecked(sa_set.sanity_check);
 
+  // show terminal output
+  cb_show_stdout = new QCheckBox("Show terminal output");
+  cb_show_stdout->setChecked(sa_set.show_stdout);
+
   // submit button
   QPushButton *pb_run_placement = new QPushButton("Run Placement");
   pb_run_placement->setShortcut(tr("CTRL+R"));
@@ -121,10 +134,12 @@ void Invoker::initGui()
   fl_gen->addRow("Schedule", cbb_t_schd);
   fl_gen->addRow("Decay factor", sb_decay_b);
   fl_gen->addRow("Num moves factor", sb_swap_fact);
+  fl_gen->addRow("Max iterations", sb_max_its);
 
   QVBoxLayout *vl_main = new QVBoxLayout();
   vl_main->addLayout(fl_gen);
   vl_main->addWidget(cb_sanity_check);
+  vl_main->addWidget(cb_show_stdout);
   vl_main->addWidget(gb_use_rw);
   vl_main->addWidget(pb_run_placement);
 

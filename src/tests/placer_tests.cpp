@@ -145,7 +145,11 @@ class PlacerTests : public QObject
       QCOMPARE(chip.calcSwapCostDelta(1, 1, 2, 1), 1);
     }
 
+    //! TODO check that random block placement initialization successfully 
+    //! places all blocks.
+
     //! TODO validate that placement of a super trivial problem is successful.
+
 
 };
 

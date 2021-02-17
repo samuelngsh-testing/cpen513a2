@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.10)
 
 project(placer)
 
+# import general dependencies
+find_package(Threads REQUIRED)
+
 # import Qt5 dependencies
 set(QT_VERSION_REQ "5.2")
 find_package(Qt5Core ${QT_VERSION_REQ} REQUIRED)
@@ -24,6 +27,7 @@ qt5_add_resources(CUSTOM_RSC qrc/application.qrc)
 # source and header files
 set(LIB_SOURCES
     spatial.cc
+    benchmarker.cc
     placer/placer.cc
     gui/settings.cc
     gui/mainwindow.cc
@@ -35,6 +39,7 @@ set(LIB_SOURCES
     )
 set(LIB_HEADERS
     spatial.h
+    benchmarker.h
     placer/placer.h
     gui/settings.h
     gui/mainwindow.h
@@ -59,7 +64,7 @@ include_directories(.)
 
 # build application
 add_executable(placer MACOSX_BUNDLE main.cc ${LIB_SOURCES} ${LIB_HEADERS} ${CUSTOM_RSC})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_LINKS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIB_LINKS} ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties(placer PROPERTIES
     BUNDLE True
     MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.placer
@@ -70,7 +75,7 @@ set_target_properties(placer PROPERTIES
 
 # build unit tests
 add_executable(placer_tests tests/placer_tests.cpp ${LIB_SOURCES} ${LIB_HEADERS} ${CUSTOM_RSC})
-target_link_libraries(placer_tests Qt5::Test ${LIB_LINKS})
+target_link_libraries(placer_tests Qt5::Test ${LIB_LINKS} ${CMAKE_THREAD_LIBS_INIT})
 add_test(placer_tests placer_tests)
 set_tests_properties(placer_tests PROPERTIES ENVIRONMENT QT_QPA_PLATFORM=offscreen)
 add_custom_command(TARGET placer_tests
