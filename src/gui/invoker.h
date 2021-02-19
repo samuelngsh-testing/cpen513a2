@@ -41,6 +41,7 @@ namespace gui {
     QDoubleSpinBox *sb_decay_b;
     QSpinBox *sb_swap_fact;
     QSpinBox *sb_max_its;
+    QSpinBox *sb_max_its_cost_unchanged;
     QGroupBox *gb_use_rw;
     QDoubleSpinBox *sb_p_upper;
     QDoubleSpinBox *sb_p_lower;

@@ -52,9 +52,12 @@ SAResults Placer::runPlacer(const SASettings &t_sa_settings)
   sa_settings = t_sa_settings;
   sa_settings.min_rw_dim = std::min(sa_settings.min_rw_dim, 
       std::min(chip->dimX(), chip->dimY()));
-  bool exit_cond = false;   // exit conditions met
+  bool exit_cond = false;           // exit conditions met
+  bool main_done = false;           // main finish conditions satisfied
+  int abs_zero_cycles = 3;          // number of cycles to run at T=0
   int cycle_attempts = sa_settings.swap_fact * pow(chip->numBlocks(), (4./3));
   int iterations = 0;
+  int iterations_cost_unchanged = 0;
   cycle_attempts = std::max(cycle_attempts, 1); // at least 1 attempt per cycle
   QPair<int,int> coord_a, coord_b;  // coordinates to be swapped
   int bid_a, bid_b;                 // block IDs a and b for the swap
@@ -74,6 +77,11 @@ SAResults Placer::runPlacer(const SASettings &t_sa_settings)
     long cost_accum = 0;
     long cost_accum_sq = 0;
     float p_accept_accum = 0;
+    int cost_i = cost;
+    if (main_done) {
+      // main loop is done, zero temperature finishing phase
+      T = 0;
+    }
     while (attempts--) {
       // pick random locs to swap
       pickLocsToSwap(coord_a, coord_b, bid_a, bid_b, rw_dim);
@@ -145,10 +153,29 @@ SAResults Placer::runPlacer(const SASettings &t_sa_settings)
     }
     update_x++;
 
+    iterations_cost_unchanged = (cost_i==cost) ? iterations_cost_unchanged+1 : 0;
+
     // evaluate exit conditions
     // TODO implement something more proper
-    if (iterations == sa_settings.max_its - 1 || isnan(T)) {
-      exit_cond = true;
+    if (main_done) {
+      abs_zero_cycles--;
+      if (abs_zero_cycles < 0) {
+        exit_cond = true;
+      }
+    } else {
+      // evaluate whether exit conditions have been met
+      if (iterations == sa_settings.max_its - 1) {
+        // done if max iterations have been reached
+        main_done = true;
+      }
+      if (isnan(T)) {
+        // done if temperature is no longer a value number
+        main_done = true;
+      }
+      if (iterations_cost_unchanged > sa_settings.max_its_cost_unchanged) {
+        // done if cost has remained unchanged for a specified number of cycles
+        main_done = true;
+      }
     }
   }
 

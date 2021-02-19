@@ -24,6 +24,7 @@ void Invoker::invokePlacement()
   sa_set.decay_b = sb_decay_b->value();
   sa_set.swap_fact = sb_swap_fact->value();
   sa_set.max_its = sb_max_its->value();
+  sa_set.max_its_cost_unchanged = sb_max_its_cost_unchanged->value();
   sa_set.use_rw = gb_use_rw->isChecked();
   sa_set.p_upper = sb_p_upper->value();
   sa_set.p_lower = sb_p_lower->value();
@@ -70,6 +71,12 @@ void Invoker::initGui()
   sb_max_its->setSingleStep(100);
   sb_max_its->setRange(1000, 1000000);
   sb_max_its->setValue(sa_set.max_its);
+
+  // max iterations cost unchanged
+  sb_max_its_cost_unchanged = new QSpinBox();
+  sb_max_its_cost_unchanged->setSingleStep(100);
+  sb_max_its_cost_unchanged->setRange(100, 100000);
+  sb_max_its_cost_unchanged->setValue(sa_set.max_its_cost_unchanged);
 
   // range window settings
   gb_use_rw = new QGroupBox("Range Window");
@@ -135,6 +142,7 @@ void Invoker::initGui()
   fl_gen->addRow("Decay factor", sb_decay_b);
   fl_gen->addRow("Num moves factor", sb_swap_fact);
   fl_gen->addRow("Max iterations", sb_max_its);
+  fl_gen->addRow("Exit if cost unchanged for iters", sb_max_its_cost_unchanged);
 
   QVBoxLayout *vl_main = new QVBoxLayout();
   vl_main->addLayout(fl_gen);

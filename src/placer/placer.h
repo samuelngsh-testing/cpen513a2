@@ -23,11 +23,12 @@ namespace pc{
   struct SASettings
   {
     GuiUpdate gui_up=GuiEachAnnealUpdate; //!< GUI update frequency.
-    TSchd t_schd=StdDevTUpdate;   //!< Temperature schedule.
-    float decay_b=0.995;          //!< Base factor for exponential decay T.
+    TSchd t_schd=StdDevTUpdate;     //!< Temperature schedule.
+    float decay_b=0.995;            //!< Base factor for exponential decay T.
     // TODO vars for compliecated temperature update (week 4 slide 17)
-    float swap_fact=10;           //!< swap_fact * n_blocks^(4/3) moves are made per cycle
-    int max_its=3000;             //!< maximum iterations
+    float swap_fact=25;             //!< swap_fact * n_blocks^(4/3) moves are made per cycle
+    int max_its=3000;               //!< maximum iterations
+    int max_its_cost_unchanged=200; //!< exit main loop if cost unchanged for this many cycles
 
     // TODO max iterations before force stop
 
@@ -66,6 +67,9 @@ namespace pc{
     //! Run the placer.
     SAResults runPlacer(const SASettings &sa_settings);
 
+    //! Place blocks onto random grid locations.
+    void initBlockPos();
+
   signals:
     //! Signal for updating GUI with the current chip state.
     void sig_updateGui(sp::Chip *);
@@ -74,9 +78,6 @@ namespace pc{
     void sig_updateChart(int cost, float T, float p_accept, int rw_dim);
 
   private:
-
-    //! Place blocks onto random grid locations.
-    void initBlockPos();
 
     //! Decide on initial temperature with Sangiovanni-Vincentelli approach.
     float initTempSV(int rand_moves, float T_fact);

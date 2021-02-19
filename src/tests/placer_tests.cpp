@@ -145,11 +145,38 @@ class PlacerTests : public QObject
       QCOMPARE(chip.calcSwapCostDelta(1, 1, 2, 1), 1);
     }
 
-    //! TODO check that random block placement initialization successfully 
-    //! places all blocks.
+    //! check that random block placement initialization successfully places 
+    //! all blocks using the ALU2 problem.
+    void testRandomPlacementInit()
+    {
+      QString p_path = ":/test_problems/alu2.txt";
+      sp::Chip chip(p_path);
+      pc::Placer placer(&chip);
+      // init block positions randomly, manipulates the chip pointer directly
+      placer.initBlockPos();
+      // iterate through all blocks to see whether they have a uniqute location
+      QSet<QPair<int,int>> coord_set;
+      for (int bid=0; bid<chip.numBlocks(); bid++) {
+        QPair<int,int> loc = chip.blockLoc(bid);
+        QCOMPARE(coord_set.contains(loc), false);
+        coord_set.insert(loc);
+      }
+    }
 
-    //! TODO validate that placement of a super trivial problem is successful.
-
+    //! Validate that placement of a very trivial problem is successful.
+    void testTrivialPlacementProblem()
+    {
+      // problem only contains two blocks, should be able to reach minimum cost
+      // very quickly
+      QString p_path = ":/test_problems/mini.txt";
+      sp::Chip chip(p_path);
+      pc::Placer placer(&chip);
+      pc::SASettings sa_settings;
+      sa_settings.t_schd = pc::StdDevTUpdate;
+      sa_settings.max_its = 500;
+      pc::SAResults results = placer.runPlacer(sa_settings);
+      QCOMPARE(results.cost, 1);
+    }
 
 };
 
