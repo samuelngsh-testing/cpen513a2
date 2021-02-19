@@ -67,7 +67,6 @@ void Viewer::clearProblem()
 
 void Viewer::fitProblemInView()
 {
-  // TODO implement
   if (chip != nullptr && chip->isInitialized()) {
     qreal sf = st::Settings::sf;  // scaling factor
     QRectF rect(0, 0, chip->dimX()*sf, chip->dimY()*sf*2);

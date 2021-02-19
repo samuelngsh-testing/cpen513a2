@@ -13,6 +13,7 @@
 
 namespace gui {
 
+  //! GUI form for tweaking placement settings and invoking it.
   class Invoker : public QWidget
   {
     Q_OBJECT

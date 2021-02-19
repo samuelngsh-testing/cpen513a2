@@ -12,8 +12,11 @@
 
 namespace sp {
 
-  //! Graph-like data structure with nodes denoting blocks. This class has no 
-  //! knowledge about the actual spatial placement of the blocks.
+  /*! \brief Graph of blocks and nets.
+   *
+   * Graph-like data structure with nodes denoting blocks. This class has no 
+   * knowledge about the actual spatial placement of the blocks.
+   */
   class Graph
   {
   public:
@@ -47,8 +50,11 @@ namespace sp {
   };
 
 
-  //! A chip containing certain numbers of rows and columns for Blocks to be
-  //! placed onto.
+  /*! \brief Chip spatial representation of blocks and nets.
+   *
+   * A chip containing certain numbers of rows and columns for blocks to be
+   * placed onto. Also performs the cost calculation.
+   */
   class Chip
   {
   public:

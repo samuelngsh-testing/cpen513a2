@@ -13,8 +13,7 @@
 
 namespace gui {
 
-  //! A primitive graphical element that displays all connectivities related to
-  //! a net.
+  //! A primitive graphical element that displays all connectivities related to a net.
   class Net : public QGraphicsItem
   {
   public:

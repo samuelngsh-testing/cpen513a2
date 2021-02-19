@@ -14,8 +14,7 @@
 
 namespace gui {
 
-  //! A primitive graphical element that displays individual cells on the chip
-  //! grid.
+  //! A primitive graphical element that displays individual cells on the chip grid.
   class Cell : public QGraphicsItem
   {
   public:

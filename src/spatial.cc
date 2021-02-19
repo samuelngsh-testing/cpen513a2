@@ -79,11 +79,6 @@ Chip::Chip(const QString &f_path)
       if (num_blocks != conn_blocks.size()) {
         qFatal("Mismatching block counts.");
       }
-      /* TODO remove
-      for (const QString &b_id_str : line_items) {
-        conn_blocks.append(b_id_str.toInt());
-      }
-      */
       graph->setNet(net_id, conn_blocks);
     }
     net_id++;

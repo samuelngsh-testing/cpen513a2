@@ -16,8 +16,11 @@ class PlacerTests : public QObject
 
   public:
 
-    //! Read the test problem properties from the provided path and return a 
-    //! QVariantMap.
+    /*! \brief Read test problem properties from JSON.
+     *
+     * Read the test problem properties from the provided path and return a 
+     * QVariantMap.
+     */
     QVariantMap readTestProps(const QString &f_path)
     {
       QFile f(f_path);
@@ -145,8 +148,11 @@ class PlacerTests : public QObject
       QCOMPARE(chip.calcSwapCostDelta(1, 1, 2, 1), 1);
     }
 
-    //! check that random block placement initialization successfully places 
-    //! all blocks using the ALU2 problem.
+    /*! \brief Check random block placement initialization.
+     *
+     * Check that random block placement initialization successfully places 
+     * all blocks using the ALU2 problem.
+     */
     void testRandomPlacementInit()
     {
       QString p_path = ":/test_problems/alu2.txt";

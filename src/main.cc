@@ -33,8 +33,6 @@ int main(int argc, char **argv) {
       " writes to out.json if unspecified.", "path"});
   parser.addOption({"repeat", "Repeat each benchmark for the specified number "
       "of times. Defaults to 10 if unspecified.", "repeat"});
-  // TODO take output JSON path for benchmarks
-  // TODO take repeat count for benchmarks
   parser.process(app);
 
   // benchmark mode routine (don't show GUI if benchmarking)

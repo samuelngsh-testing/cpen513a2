@@ -15,6 +15,7 @@
 
 namespace gui {
 
+  //! Widget for visualizing block placements and net connectivities.
   class Viewer : public QGraphicsView
   {
     Q_OBJECT

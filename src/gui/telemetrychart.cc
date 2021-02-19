@@ -15,11 +15,6 @@ TelemetryChart::TelemetryChart(QWidget *parent)
   initGui();
 }
 
-TelemetryChart::~TelemetryChart()
-{
-  // TODO implement
-}
-
 void TelemetryChart::addTelemetry(int cost, float T, float p_accept, int rw_dim)
 {
   int x_step = std::max(cost_series->count(), T_series->count());

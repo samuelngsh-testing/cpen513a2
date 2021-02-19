@@ -43,10 +43,6 @@ SAResults Placer::runPlacer(const SASettings &t_sa_settings)
   // set RNG distribution
   ind_dist = std::uniform_int_distribution<int>(0, chip->dimX()*chip->dimY()-1);
   bid_dist = std::uniform_int_distribution<int>(0, chip->numBlocks()-1);
-  // TODO verify that RNG implementation is sound (doesn't always produce the 
-  // same random vars)
-
-  // TODO initialize annealing schedule
 
   // flags and variables
   sa_settings = t_sa_settings;
@@ -56,20 +52,19 @@ SAResults Placer::runPlacer(const SASettings &t_sa_settings)
   bool main_done = false;           // main finish conditions satisfied
   int abs_zero_cycles = 3;          // number of cycles to run at T=0
   int cycle_attempts = sa_settings.swap_fact * pow(chip->numBlocks(), (4./3));
-  int iterations = 0;
-  int iterations_cost_unchanged = 0;
   cycle_attempts = std::max(cycle_attempts, 1); // at least 1 attempt per cycle
+  int iterations = 0;               // current SA iteration
+  int iterations_cost_unchanged = 0;// cost has been unchanged for this many iters
   QPair<int,int> coord_a, coord_b;  // coordinates to be swapped
   int bid_a, bid_b;                 // block IDs a and b for the swap
-  int update_x=0;
-
-  emit sig_updateGui(chip);
+  emit sig_updateGui(chip);         // instruct GUI to show initial random placement
 
   // start the loop with an initial temperature
-  float T = initTempSV(50, 20); // this must come before the first calcCost
-  int cost = chip->calcCost();
+  float T = initTempSV(50, 20);     // this must come before the first calcCost
+  int cost = chip->calcCost();      // calculate initial cost of rand. placement
   chip->setCost(cost);
   int rw_dim = std::max(chip->dimX(), chip->dimY());  // initialize range window
+  // main loop
   while (!exit_cond) {
     // variables that renew at every point in the schedule
     int attempts = cycle_attempts;
@@ -77,7 +72,7 @@ SAResults Placer::runPlacer(const SASettings &t_sa_settings)
     long cost_accum = 0;
     long cost_accum_sq = 0;
     float p_accept_accum = 0;
-    int cost_i = cost;
+    int cost_i = cost;  // record the cost before the iteration to track whether it's changed
     if (main_done) {
       // main loop is done, zero temperature finishing phase
       T = 0;
@@ -96,7 +91,7 @@ SAResults Placer::runPlacer(const SASettings &t_sa_settings)
         swapLocs(coord_a, coord_b);
         cost += cost_delta;
         chip->setCost(cost);
-        // update std dev calculation stats
+        // update std calculation stats
         n_swaps++;
         cost_accum += cost;
         cost_accum_sq += pow(cost, 2);
@@ -107,63 +102,64 @@ SAResults Placer::runPlacer(const SASettings &t_sa_settings)
         emit sig_updateGui(chip);
         emit sig_updateChart(cost, T, -1, -1);
         if (sa_settings.show_stdout) {
-          qDebug() << tr("Curr stored cost=%1,  Next T=%3, iteration=%4").arg(cost).arg(T).arg(iterations);
+          qDebug() << tr("Curr stored cost=%1,  Next T=%3, iteration=%4")
+            .arg(cost).arg(T).arg(iterations);
         }
       }
     }
 
-    // update annealing schedule
+    // update annealing schedule and range window
     iterations++;
     attempts = cycle_attempts;
     if (sa_settings.use_rw) {
       updateRangeWindow(rw_dim, p_accept_accum/cycle_attempts);
     }
-    if (iterations == sa_settings.max_its - 1) {
-      // set T to 0 for last iteration
-      T = 0;
-    } else {
-      // update T depending on selected schedule
-      switch (sa_settings.t_schd) {
-        case StdDevTUpdate:
-        {
-          double std_dev = sqrt(cost_accum_sq/n_swaps - pow(cost_accum/n_swaps, 2));
-          T = T * exp(-0.7 * T / std_dev);
-          break;
-        }
-        case ExpDecayTUpdate:
-          T *= sa_settings.decay_b;
-          break;
+    // update T depending on selected schedule
+    switch (sa_settings.t_schd) {
+      case StdDevTUpdate:
+      {
+        double std_dev = sqrt(cost_accum_sq/n_swaps - pow(cost_accum/n_swaps, 2));
+        T = T * exp(-0.7 * T / std_dev);
+        break;
       }
+      case ExpDecayTUpdate:
+        T *= sa_settings.decay_b;
+        break;
     }
 
     // sanity check
     if (sa_settings.sanity_check) {
       int calc_cost = chip->calcCost();
       if (cost != calc_cost) {
-        qWarning() << tr("Conflicting costs: recorded %1, calculated %2").arg(cost).arg(calc_cost);
+        qWarning() << tr("Conflicting costs: recorded %1, calculated %2")
+          .arg(cost).arg(calc_cost);
       }
     }
 
+    // terminal status output
     if (sa_settings.show_stdout) {
-      qDebug() << tr("Curr stored cost=%1, Next T=%2, iterations=%3, avg P accept=%4, range window dim=%5").arg(cost).arg(T).arg(iterations).arg(p_accept_accum/cycle_attempts).arg(rw_dim);
+      qDebug() << tr("Curr stored cost=%1, Next T=%2, iterations=%3, avg P "
+          "accept=%4, range window dim=%5").arg(cost).arg(T).arg(iterations)
+        .arg(p_accept_accum/cycle_attempts).arg(rw_dim);
     }
+
+    // GUI update
     if (sa_settings.gui_up <= GuiEachAnnealUpdate) {
       emit sig_updateGui(chip);
       emit sig_updateChart(cost, T, p_accept_accum/cycle_attempts, rw_dim);
     }
-    update_x++;
 
     iterations_cost_unchanged = (cost_i==cost) ? iterations_cost_unchanged+1 : 0;
 
     // evaluate exit conditions
-    // TODO implement something more proper
     if (main_done) {
+      // main loop already done, see if T=0 phase is done yet
       abs_zero_cycles--;
       if (abs_zero_cycles < 0) {
         exit_cond = true;
       }
     } else {
-      // evaluate whether exit conditions have been met
+      // evaluate whether main event completion conditions have been met
       if (iterations == sa_settings.max_its - 1) {
         // done if max iterations have been reached
         main_done = true;
@@ -185,6 +181,7 @@ SAResults Placer::runPlacer(const SASettings &t_sa_settings)
 
   if (sa_settings.gui_up <= GuiFinalOnly) {
     emit sig_updateGui(chip);
+    emit sig_updateChart(cost, T, -1, -1);
   }
 
   SAResults results;
@@ -221,19 +218,15 @@ float Placer::initTempSV(int rand_moves, float T_fact)
   for (int i=0; i<rand_moves; i++) {
     // pick random locs to swap
     pickLocsToSwap(coord_a, coord_b, bid_a, bid_b, std::max(chip->dimX(), chip->dimY()));
-    // TODO switch to delta cost calc
-    int cost_i = chip->calcCost();
-    // perform the swap
+    int cost_delta = chip->calcSwapCostDelta(coord_a.first, coord_a.second,
+        coord_b.first, coord_b.second);
     swapLocs(coord_a, coord_b);
-    // calc difference
-    int cost_f = chip->calcCost();
-    // TODO remove costs[i] = cost_f - cost_i;
-
-    cost_accum += cost_f - cost_i;
-    cost_accum_sq += pow(cost_f - cost_i, 2);
+    // record stats
+    cost_accum += cost_delta;
+    cost_accum_sq += pow(cost_delta, 2);
   }
-  float std_dev = sqrt(cost_accum_sq/rand_moves - pow(cost_accum/rand_moves, 2));
-  return std_dev * T_fact;
+  float stddev = sqrt(cost_accum_sq/rand_moves - pow(cost_accum/rand_moves, 2));
+  return stddev * T_fact;
 }
 
 void Placer::pickLocsToSwap(QPair<int,int> &coord_a, QPair<int,int> &coord_b,
@@ -244,7 +237,6 @@ void Placer::pickLocsToSwap(QPair<int,int> &coord_a, QPair<int,int> &coord_b,
     // choose random block ID as a and any location as b, eligible if not equal
     bid_a = bid_dist(mt);
     coord_a = chip->blockLoc(bid_a);
-    // TODO remove coord_b = ind_coord(ind_dist(mt), chip->dimX());
     pickCoordFromRangeWindow(coord_a, coord_b, rw_dim);
     chosen = (coord_a != coord_b);
   }

@@ -16,6 +16,7 @@
 
 namespace gui {
 
+  //! Main window widget housing all GUI elements.
   class MainWindow : public QMainWindow
   {
     Q_OBJECT

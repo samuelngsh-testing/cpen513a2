@@ -25,9 +25,6 @@ namespace gui {
     //! Constructor.
     TelemetryChart(QWidget *parent=nullptr);
 
-    //! Destructor.
-    ~TelemetryChart();
-
     //! Add telemetry info to chart (assume invalid if negative).
     void addTelemetry(int cost, float T, float p_accept, int rw_dim);
 
