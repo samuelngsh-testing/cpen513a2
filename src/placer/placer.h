@@ -1,9 +1,10 @@
-// @file:     placer.h
-// @author:   Samuel Ng
-// @created:  2021-02-03
-// @license:  GNU LGPL v3
-//
-// @desc:     The simulated annealing block placement class.
+/*! 
+  \file placer.h
+  \brief The simulated annealing block placement class.
+  \author Samuel Ng
+  \date 2021-02-03 created
+  \copyright GNU LGPL v3
+  */
 
 #ifndef _PC_PLACER_H_
 #define _PC_PLACER_H_
@@ -15,7 +16,13 @@
 // placer namespace
 namespace pc{
 
-  enum TSchd {ExpDecayTUpdate, StdDevTUpdate};
+  //! The annealing temperature schedule.
+  enum class TSchd {
+    //! Exponential decay temperature.
+    ExpDecayTUpdate,
+    //! Dynamic temperature update.
+    StdDevTUpdate
+  };
   enum GuiUpdate {GuiEachSwap, GuiEachAnnealUpdate, GuiFinalOnly};
 
   //! Simulated annealer settings.
@@ -25,7 +32,7 @@ namespace pc{
     GuiUpdate gui_up=GuiEachAnnealUpdate; //!< GUI update frequency.
 
     // annealing schedule settings
-    TSchd t_schd=StdDevTUpdate;     //!< Temperature schedule.
+    TSchd t_schd=TSchd::StdDevTUpdate;  //!< Temperature schedule.
     float decay_b=0.995;            //!< Base factor for exponential decay T.
     float swap_fact=25;             //!< swap_fact * n_blocks^(4/3) moves are made per cycle
     int max_its=3000;               //!< maximum iterations

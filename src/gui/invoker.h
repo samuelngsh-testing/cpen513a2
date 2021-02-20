@@ -1,9 +1,10 @@
-// @file:     invoker.h
-// @author:   Samuel Ng
-// @created:  2021-02-15
-// @license:  GNU LGPL v3
-//
-// @desc:     GUI for tweaking invocation parameters.
+/*!
+  \file invoker.h
+  \brief GUI for tweaking invocation parameters.
+  \author Samuel Ng
+  \date 2021-02-15
+  \copyright GNU LGPL v3
+  */
 
 #ifndef _GUI_INVOKER_H_
 #define _GUI_INVOKER_H_

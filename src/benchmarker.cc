@@ -120,7 +120,9 @@ void Benchmarker::readSettings(const QString &settings_path)
   // iterate through all key value pairs and make appropriate settings
   for (auto json_it=json_obj.constBegin(); json_it!=json_obj.constEnd(); json_it++) {
     if (json_it.key() == "t_schd") {
-      sa_settings.t_schd = static_cast<pc::TSchd>(json_it.value().toInt());
+      int t_schd_int = json_it.value().toInt();
+      sa_settings.t_schd = (t_schd_int == 0) ? pc::TSchd::ExpDecayTUpdate
+        : pc::TSchd::StdDevTUpdate;
     } else if (json_it.key() == "decay_b") {
       sa_settings.decay_b = json_it.value().toDouble();
     } else if (json_it.key() == "swap_fact") {

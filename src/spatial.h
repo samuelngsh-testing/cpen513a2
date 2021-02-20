@@ -1,9 +1,10 @@
-// @file:     spatial.h
-// @author:   Samuel Ng
-// @created:  2021-02-02
-// @license:  GNU LGPL v3
-//
-// @desc:     Spatial definitions (chip and the blocks that go into it).
+/*!
+  \file spatial.h
+  \brief Spatial definitions (chip and the blocks that go into it).
+  \author Samuel Ng
+  \date 2021-02-02 created
+  \copyright GNU LGPL v3
+  */
 
 #ifndef _SP_SPATIAL_H_
 #define _SP_SPATIAL_H_
@@ -103,6 +104,8 @@ namespace sp {
     //! Return the cell coordinates of the specified block as a pair.
     QPair<int,int> blockLoc(int block_id) {return block_locs[block_id];}
 
+    //! \brief Compute the cost of the current placement.
+    //!
     //! Compute the cost of the current placement from scratch. Does not update 
     //! the internal cost counter, use setCost to do that.
     int calcCost();

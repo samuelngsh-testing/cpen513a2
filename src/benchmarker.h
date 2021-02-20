@@ -1,9 +1,10 @@
-// @file:     benchmarker.h
-// @author:   Samuel Ng
-// @created:  2021-02-16
-// @license:  GNU LGPL v3
-//
-// @desc:     Benchmarking routines.
+/*!
+  \file benchmarker.h
+  \brief Multi-threaded benchmarking routines.
+  \author Samuel Ng
+  \date 2021-02-16 created
+  \copyright GNU LGPL v3
+  */
 
 #ifndef _CLI_BENCHMARKER_H_
 #define _CLI_BENCHMARKER_H_

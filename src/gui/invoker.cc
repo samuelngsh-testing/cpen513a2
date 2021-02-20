@@ -41,13 +41,18 @@ void Invoker::initGui()
   // get an instance of SASettings with default settings
   pc::SASettings sa_set;
 
+  // map exp decay to 0 and dynamic schedule to 1
+  QMap<pc::TSchd, int> tschd_ind;
+  tschd_ind[pc::TSchd::ExpDecayTUpdate] = 0;
+  tschd_ind[pc::TSchd::StdDevTUpdate] = 1;
+
   // init gui elements
 
   // temperature schedule
   cbb_t_schd = new QComboBox();
   cbb_t_schd->addItem("Exponential decay");
   cbb_t_schd->addItem("Dynamic standard deviation update");
-  cbb_t_schd->setCurrentIndex(sa_set.t_schd);
+  cbb_t_schd->setCurrentIndex(tschd_ind[sa_set.t_schd]);
   cbb_t_schd->setToolTip("Temperature schedules:\n"
       "Dynamic: T_new = T_old e^{-0.7 T_old / sigma}\n"
       "Exp Decay: T_new = beta * T_old");
@@ -58,7 +63,7 @@ void Invoker::initGui()
   sb_decay_b->setSingleStep(0.001);
   sb_decay_b->setRange(0.001, 0.999);
   sb_decay_b->setValue(sa_set.decay_b);
-  sb_decay_b->setEnabled(cbb_t_schd->currentIndex() == pc::ExpDecayTUpdate);
+  sb_decay_b->setEnabled(cbb_t_schd->currentIndex() == tschd_ind[pc::TSchd::ExpDecayTUpdate]);
 
   // swap multiplier
   sb_swap_fact = new QSpinBox();
@@ -132,7 +137,9 @@ void Invoker::initGui()
 
   // connect signals
   connect(cbb_t_schd, QOverload<int>::of(&QComboBox::currentIndexChanged),
-      [this]() {sb_decay_b->setEnabled(cbb_t_schd->currentIndex() == pc::ExpDecayTUpdate);});
+      [this, tschd_ind]() {
+        sb_decay_b->setEnabled(cbb_t_schd->currentIndex() == tschd_ind[pc::TSchd::ExpDecayTUpdate]);
+      });
   connect(pb_run_placement, &QAbstractButton::released, this, &Invoker::invokePlacement);
 
   // add items to layout

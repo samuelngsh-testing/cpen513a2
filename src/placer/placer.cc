@@ -116,13 +116,13 @@ SAResults Placer::runPlacer(const SASettings &t_sa_settings)
     }
     // update T depending on selected schedule
     switch (sa_settings.t_schd) {
-      case StdDevTUpdate:
+      case TSchd::StdDevTUpdate:
       {
         double std_dev = sqrt(cost_accum_sq/n_swaps - pow(cost_accum/n_swaps, 2));
         T = T * exp(-0.7 * T / std_dev);
         break;
       }
-      case ExpDecayTUpdate:
+      case TSchd::ExpDecayTUpdate:
         T *= sa_settings.decay_b;
         break;
     }

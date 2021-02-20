@@ -1,10 +1,10 @@
-// @file:     telemetrychart.h
-// @author:   Samuel Ng
-// @created:  2021-02-05
-// @license:  GNU LGPL v3
-//
-// @desc:     Widget that charts current placement telemetries such as cost, 
-//            annealing temp, etc.
+/*!
+  \file telemetrychart.h
+  \brief Widget that charts current placement telemetries.
+  \author Samuel Ng
+  \date 2021-02-05
+  \copyright GNU LGPL v3
+  */
 
 #ifndef _GUI_TELEMCHART_H_
 #define _GUI_TELEMCHART_H_

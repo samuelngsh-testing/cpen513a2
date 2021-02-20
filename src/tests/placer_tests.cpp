@@ -1,9 +1,10 @@
-// @file:     placer_tests.cpp
-// @author:   Samuel Ng
-// @created:  2021-02-15
-// @license:  GNU LGPL v3
-//
-// @desc:     Unit tests for the placer program.
+/*!
+  \file placer_tests.cpp
+  \brief Unit tests for the placer program.
+  \author Samuel Ng
+  \date 2021-02-15 created
+  \copyright GNU LGPL v3
+  */
 
 #include <QtTest/QtTest>
 #include <QJsonObject>
@@ -178,7 +179,7 @@ class PlacerTests : public QObject
       sp::Chip chip(p_path);
       pc::Placer placer(&chip);
       pc::SASettings sa_settings;
-      sa_settings.t_schd = pc::StdDevTUpdate;
+      sa_settings.t_schd = pc::TSchd::StdDevTUpdate;
       sa_settings.max_its = 500;
       pc::SAResults results = placer.runPlacer(sa_settings);
       QCOMPARE(results.cost, 1);

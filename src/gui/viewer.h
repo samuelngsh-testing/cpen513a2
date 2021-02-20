@@ -1,9 +1,10 @@
-// @file:     viewer.h
-// @author:   Samuel Ng
-// @created:  2021-02-02
-// @license:  GNU LGPL v3
-//
-// @desc:     Show the problem grid and the inter-cell connectivities
+/*!
+  \file viewer.h
+  \brief Show the problem grid and the inter-cell connectivities.
+  \author Samuel Ng
+  \date 2021-02-02 created
+  \copyright GNU LGPL v3
+  */
 
 #ifndef _GUI_VIEWER_H_
 #define _GUI_VIEWER_H_

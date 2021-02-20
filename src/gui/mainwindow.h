@@ -1,9 +1,10 @@
-// @file:     mainwindow.h
-// @author:   Samuel Ng
-// @created:  2021-02-02
-// @license:  GNU LGPL v3
-//
-// @desc:     Main window (frame) of the application.
+/*!
+  \file mainwindow.h
+  \brief Main window (frame) of the application.
+  \author Samuel Ng
+  \date 2021-02-02 created
+  \copyright GNU LGPL v3
+  */
 
 #ifndef _GUI_MAINWINDOW_H_
 #define _GUI_MAINWINDOW_H_

@@ -1,9 +1,10 @@
-// @file:     block.h
-// @author:   Samuel Ng
-// @created:  2021-02-04
-// @license:  GNU LGPL v3
-//
-// @desc:     Cell class for showing blocks and empty space on the viewer.
+/*!
+  \file cell.h
+  \brief Cell class for showing blocks and empty space on the viewer.
+  \author Samuel Ng
+  \date 2021-02-04
+  \copyright GNU LGPL v3
+  */
 
 #ifndef _GUI_BLOCK_H_
 #define _GUI_BLOCK_H_

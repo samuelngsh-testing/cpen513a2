@@ -1,9 +1,10 @@
-// @file:     net.h
-// @author:   Samuel Ng
-// @created:  2021-02-04
-// @license:  GNU LGPL v3
-//
-// @desc:     Net class for showing net connectivities on the chip.
+/*!
+  \file net.h
+  \brief Net class for showing net connectivities on the chip.
+  \author Samuel Ng
+  \date 2021-02-04 created
+  \copyright GNU LGPL v3
+  */
 
 #ifndef _GUI_CELL_H_
 #define _GUI_CELL_H_
