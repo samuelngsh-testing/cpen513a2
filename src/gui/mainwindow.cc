@@ -60,6 +60,7 @@ void MainWindow::runPlacement(pc::SASettings sa_set)
     return;
   }
   tchart->clearTelemetries();
+  dw_tchart->raise();
   pc::Placer placer(chip);
 
   // connect signals
@@ -101,6 +102,8 @@ void MainWindow::initGui()
   dw_tchart = new QDockWidget("Placement Telemetry", this);
   dw_tchart->setWidget(tchart);
   addDockWidget(Qt::RightDockWidgetArea, dw_tchart);
+  tabifyDockWidget(dw_invoker, dw_tchart);
+  dw_invoker->raise();
 
   // initiate menu bars
   initMenuBar();

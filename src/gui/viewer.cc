@@ -79,6 +79,7 @@ void Viewer::initViewer()
 {
   scene = new QGraphicsScene(this);
   setScene(scene);
+  setMinimumSize(300,300);
 }
 
 void Viewer::updateCells()
